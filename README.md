@@ -1,70 +1,144 @@
-# ESL — Electronic Shelf Label
+# VMI Systems — Vendor Managed Inventory
 
-> *Automated VMI ordering system. Two buttons. Zero manual replenishment.*
-
----
-
-## What it solves
-
-Manual replenishment on warehouse shelves is slow, error-prone and invisible to the ERP system. Staff forget to order, order too late or order the wrong quantities.
-
-ESL replaces the process with a two-button hardware label mounted directly on the shelf:
-
-- **Button 1** — triggers an order line instantly
-- **Button 2** — confirms delivery and resets the order line
-
-No screens. No logins. No manual data entry.
+> *From manual replenishment to automated inventory intelligence — built across two of Denmark's largest industrial distributors.*
 
 ---
 
-## How it works
+## Impact
 
-```
-Button press → REST API → Order pooled by site
-→ Weekly trigger → CSV/EDI → SAP → Delivery next day
-→ Button 2 confirms → Order line reset
-```
+Designed, implemented and optimised VMI solutions across **Lemvigh-Müller** and **Sanistål** — two of Denmark's largest industrial distributors and direct competitors.
 
-Orders from all shelf labels on a site are pooled throughout the week. At a predefined day and time, the batch is converted to CSV, transformed to EDI format and pushed to SAP for automatic fulfilment.
-
-Duplicate presses within the same order period are detected — the label display confirms the item is already ordered.
+Four different technologies. Four separate implementations. One consistent outcome: warehouse staff stop managing replenishment manually, and the business gains real-time visibility into consumption patterns.
 
 ---
 
-## Architecture
+## Implementations
 
-| Component | Role |
-|---|---|
-| ESL Hardware | 2-button label, e-ink display, wireless |
-| REST API | Collects and pools order lines per site |
-| LM Admin | Configuration portal for items, sites, access points |
-| SAP | ERP system — receives EDI, checks availability, fulfils |
-| LTE Router | Wireless connectivity, min. 20m range per access point |
+### 🔵 ESL — Electronic Shelf Label
+**Client:** Lemvigh-Müller · **Hardware & embedded software:** [PDI Digital](https://www.pdi-digital.com/)
+
+Two-button label mounted directly on the shelf. Button 1 triggers an order line. Button 2 confirms delivery and resets. Orders pool by site via REST API, convert to CSV/EDI and push to SAP automatically.
+
+Replenishment: 1x weekly via mercher who refills stock and handles signal loss, unit issues and demand changes on-site.
+
+→ [See use case documentation](docs/ESL%20UseCase.pdf)
+→ [Live on lemu.dk](https://www.lemu.dk/da/services/levering-og-lagerstyring/smartlager/elektronisk-hyldeforkant)
 
 ---
 
-## Key requirements
+### ⚖️ SmartVægte™ — Weight-based VMI
+**Client:** Lemvigh-Müller · **Hardware:** [DigiSens](https://digisens.ch/en/)
 
-- 24/7/365 availability
-- Battery life minimum 2 years
-- Operating temperature -10°C to +50°C
-- Dust, dirt and grease resistant
-- Display update within 10 seconds
-- CSV/EDI output compatible with SAP
+Shelf sensors monitor stock continuously. Order triggered automatically when stock falls below a pre-set minimum weight — based on min/max interval logic. No human action required. Range: 4kg to 1000kg per sensor.
+
+Best for bulk items, cables, fluids and stock that is hard to count visually.
+
+Replenishment: 1x weekly via mercher.
+
+→ [Live on lemu.dk](https://www.lemu.dk/da/services/levering-og-lagerstyring/smartlager/smartvaegte)
+
+---
+
+### 🤖 Vending Automater — Controlled Issue
+**Clients:** Lemvigh-Müller · Sanistål · **Hardware:** [IVM Micro Solutions](https://www.ivmsolutions.com/) · [AutoCrib](https://www.autocrib.com/)
+
+Locked dispensing units with RFID access control. Employees access items using existing access cards or PIN. System logs who takes what and when. Order triggered automatically based on min/max interval logic.
+
+RFID readers programmed per installation: card type, frequency, output format (hex vs decimal) — ensuring staff can use existing building access cards or purchase dedicated cards.
+
+Replenishment: 1x weekly via mercher.
+
+---
+
+### 📦 StockMaster
+**Client:** Sanistål · **Platform:** [CribMaster / Stanley Black & Decker](https://storage.stanleyblackanddecker.com/cribmaster)
+
+VMI concept built on CribMaster technology. Order triggered based on min/max interval logic — generated as XML files from the CribMaster database. Sanistål won International Partner of the Year 2017 for this implementation.
+
+RFID access control — same programming approach as vending automater.
+
+Replenishment: 1x weekly via mercher.
+
+---
+
+## Integration Patterns
+
+| Solution | Integration | Order trigger | Replenishment |
+|---|---|---|---|
+| ESL | REST API → CSV/EDI → SAP | Button press | 1x weekly, mercher |
+| SmartVægte™ | Weight sensor → site controller | Min/max interval | 1x weekly, mercher |
+| Vending automater | RFID access log → ERP | Min/max interval | 1x weekly, mercher |
+| StockMaster | CribMaster DB → XML files | Min/max interval | 1x weekly, mercher |
+
+---
+
+## The Decision Logic Behind It
+
+The technology is the easy part. The hard part is knowing what goes in the machine.
+
+### ABC Categorisation
+Every customer implementation started with their item list and an ABC classification:
+
+- **A** — must always be available
+- **B** — include if capacity allows
+- **C** — remove if space is needed
+
+This forced customers to think about criticality — not just what they used, but what they could not afford to run out of.
+
+### Capacity Calculation
+Originally featured within CribMaster templates for StockMaster implementations at Sanistål — then re-invented and rebuilt to fit the AutoCrib solution at Lemvigh-Müller.
+
+Built a dedicated Excel model that automatically calculated capacity fill rate for AutoCrib vending machines. Given a customer's item list and ABC classification, the model calculated how their assortment fit the machine's physical capacity — room by room. Each room configured individually: some rooms hold 12 pairs, others 6. Almost entirely customer-specific.
+
+This turned a complex configuration problem into a structured, repeatable decision process.
+
+### Item Database
+Over time, built a master item database mapping each physical room in each machine to a specific item — with max capacity defined per room. Enabled rapid configuration of new installations and consistent management of existing ones.
+
+### Business Cases
+Contributed to business case development for customer investments — translating operational data into financial justification for the VMI investment.
+
+---
+
+## What This Actually Is
+
+This is not just VMI implementation. It is the same pattern that appears across all NorthLogicLab work:
+
+- Understand the domain deeply
+- Build decision support that makes the complex manageable
+- Document it so others can maintain and extend it
+- Make the invisible visible
+
+The same thinking that built these VMI solutions now drives [PTDE](https://github.com/jonbach2012-design/PackagingTenderDecisionEngine) and [Regulus](https://github.com/NorthLogicLab/Regulus).
 
 ---
 
 ## Documentation
 
-- [ESL Use Case — System Architecture](docs/ESL%20UseCase.pdf)
+**Lemvigh-Müller SmartLager™**
+- [ESL — Elektronisk hyldeforkant](https://www.lemu.dk/da/services/levering-og-lagerstyring/smartlager/elektronisk-hyldeforkant)
+- [SmartVægte™](https://www.lemu.dk/da/services/levering-og-lagerstyring/smartlager/smartvaegte)
+- [Vending automater](https://www.lemu.dk/da/services/levering-og-lagerstyring/smartlager/smartautomater)
 
-- [Lemvigh-Müller SmartLager™ — Elektronisk hyldeforkant](https://www.lemu.dk/da/services/levering-og-lagerstyring/smartlager/elektronisk-hyldeforkant)
+**Sanistål**
+- [Vending machine — StockMaster](https://storage.stanleyblackanddecker.com/cribmaster)
+
+**Hardware & software partners**
+- [PDI Digital](https://www.pdi-digital.com/) · [DigiSens](https://digisens.ch/en/) · [AutoCrib](https://www.autocrib.com/) · [IVM Micro Solutions](https://www.ivmsolutions.com/)
+
+**Project documentation**
+- [ESL Use Case — System Architecture](docs/ESL%20UseCase.pdf)
 
 ---
 
 ## Status
 
-Co-architect of the ESL system now commercially deployed as part of Lemvigh-Müller's SmartLager™ solution — serving industrial customers across Denmark.
+All four solutions live in production — across Lemvigh-Müller's SmartLager™ network and Sanistål's StockMaster programme, serving industrial customers across Denmark.
+
+The strategic shift in both organisations: from **push** to **pull**.
+
+Previously, suppliers pushed stock based on forecasts and assumptions. With VMI, consumption data pulls replenishment automatically — triggered by actual usage, not estimates. The result is less waste, fewer stockouts and a supplier relationship that shifts from transactional to strategic.
+
 ---
 
 *Part of [NorthLogicLab](https://github.com/NorthLogicLab) · Built by [Jon Bach](https://theenginesbehind.com)*
